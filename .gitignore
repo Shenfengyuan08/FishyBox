@@ -1,0 +1,34 @@
+# Build artifacts
+dist/
+dist_new/
+build/
+release/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# User data & backups — NEVER commit these
+database/
+backup/
+backups/
+prompts.db
+*.db
+fishybox.log
+
+# Edge isolated profile (large browser cache)
+_edge_profile/
+
+# Local env
+.env
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal dev notes — keep locally, never commit
+工作报告-*.md
+工作日志-*.md
+迭代计划-*.md
