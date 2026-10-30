@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FishyBox</title>
+<link rel="stylesheet" href="/static/highlight.min.css">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --primary: #4f6ef7;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 24px 16px;
+  }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 26px; margin-bottom: 4px; }
+  header p { color: var(--muted); font-size: 14px; }
+  .header-btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .icon-btn, .btn-exit {
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+    background: #fff; color: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .icon-btn:hover, .btn-exit:hover { background: var(--bg); }
+
+  .search-box { margin-bottom: 22px; }
+  .search-box input {
+    width: 100%; padding: 12px 16px; font-size: 15px;
+    border: 1px solid var(--border); border-radius: 10px; outline: none; background: var(--card);
+  }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,110,247,.12); }
+
+  .form-panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 28px;
+  }
+  .form-panel h2 { font-size: 17px; margin-bottom: 14px; }
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row input {
+    flex: 1; min-width: 160px; padding: 10px 12px; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 8px; outline: none;
+  }
+  .form-row input:focus { border-color: var(--primary); }
+  textarea {
+    width: 100%; min-height: 120px; padding: 10px 12px; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 8px; outline: none;
+    resize: vertical; font-family: inherit;
+  }
+  textarea:focus { border-color: var(--primary); }
+  .btn {
+    display: inline-block; padding: 10px 20px; font-size: 14px; cursor: pointer;
+    border: none; border-radius: 8px; transition: opacity .15s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { opacity: .88; }
+  .form-actions { margin-top: 12px; }
+  /* 快捷标签（可点击切换） */
+  /* 快捷标签：最多两行，单个标签内部不换行 */
+  .tag-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px;
+    max-height: 58px; overflow-y: auto;
+  }
+  .chip {
+    font-size: 12px; line-height: 18px; padding: 3px 10px; border-radius: 999px;
+    cursor: pointer; white-space: nowrap; flex: 0 0 auto;
+    background: rgba(79,110,247,.08); color: var(--primary);
+    border: 1px solid transparent; user-select: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .chip:hover { background: rgba(79,110,247,.16); }
+  .chip.active { background: var(--primary); color: #fff; }
+  .chip .del { font-size: 12px; opacity: .45; }
+  .chip .del:hover { opacity: 1; }
+  .chip-add { border: 1px dashed var(--primary); background: transparent; }
+  .chip.deleting { border-color: #ef4444; color: #ef4444; }
+  .chip-del { border: 1px dashed #ef4444; background: transparent; color: #ef4444; }
+  .chip-del-on { background: #ef4444; color: #fff; border-style: solid; }
+  /* 剪贴板设置弹窗 */
+  .modal-desc { font-size: 12px; color: #64748b; line-height: 1.7; margin: 8px 0 14px; }
+  .clip-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin: 12px 0; font-size: 13px;
+  }
+  .clip-row input[type=number] {
+    width: 90px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid #e2e8f0; font-size: 13px;
+  }
+  .clip-switch {
+    width: 46px; height: 26px; border-radius: 999px; border: none;
+    background: #cbd5e1; position: relative; cursor: pointer; transition: background .2s;
+  }
+  .clip-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s;
+  }
+  .clip-switch[data-on="1"] { background: var(--primary); }
+  .clip-switch[data-on="1"]::after { left: 23px; }
+  /* 备份弹窗按钮组 */
+  .backup-btns { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .backup-btns .btn { justify-content: center; }
+  /* 通用对话框输入框 */
+  #dialogInput {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid #e2e8f0; font-size: 14px; margin-bottom: 12px;
+  }
+  #dialogMessage { white-space: pre-line; }
+
+  .results-title { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+  .cards { display: flex; flex-direction: column; gap: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card-title { font-size: 16px; flex: 1; word-break: break-all; }
+  .tag {
+    font-size: 12px; color: var(--primary); background: rgba(79,110,247,.1);
+    padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .card-content { font-size: 14px; color: var(--text); word-break: break-word; cursor: pointer; margin-bottom: 12px; line-height: 1.6; }
+  .card-content h1, .card-content h2, .card-content h3, .card-content h4 { margin: 0.6em 0 0.3em; font-size: 1.1em; }
+  .card-content p { margin: 0.4em 0; }
+  .card-content ul, .card-content ol { padding-left: 1.4em; margin: 0.4em 0; }
+  .card-content blockquote { border-left: 3px solid var(--border); padding-left: 10px; color: var(--muted); margin: 0.4em 0; }
+  .card-content pre { background: #f6f8fa; padding: 10px; border-radius: 6px; overflow-x: auto; margin: 0.4em 0; }
+  .card-content pre code { background: none; padding: 0; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+  .card-content code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; background: rgba(0,0,0,.05); padding: 1px 5px; border-radius: 4px; }
+  .card-content table { border-collapse: collapse; margin: 0.5em 0; }
+  .card-content th, .card-content td { border: 1px solid var(--border); padding: 4px 8px; }
+  .card-content a { color: var(--primary); }
+  .card-actions { display: flex; gap: 10px; }
+  .btn-copy { background: var(--primary); color: #fff; }
+  .btn-del { background: #fff; color: #ef4444; border: 1px solid #fecaca; }
+  .btn-del:hover { background: #fef2f2; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+  /* ===== 隐私库向导 ===== */
+  .vault-topbar {
+    position: relative;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 16px; min-height: 34px;
+  }
+  .vault-title {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    margin: 0; font-size: 17px; font-weight: 600; white-space: nowrap;
+    max-width: 45%; overflow: hidden; text-overflow: ellipsis;
+  }
+  .vault-actions { display: flex; gap: 6px; margin-left: auto; }
+  .vault-actions .icon-btn { padding: 6px 10px; }
+  .header-btn {
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+    background: #fff; color: var(--muted); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .header-btn:hover { background: var(--bg); }
+
+  /* 视图：只负责显示/隐藏，不含任何外观 */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* 卡片视图：垂直居中 */
+  #view-welcome.active, #view-set-pwd.active {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 120px);
+  }
+
+  /* 卡片：只负责外观（在 .view 内部，不会和显示逻辑冲突） */
+  .center-box {
+    display: flex; flex-direction: column; gap: 14px; align-items: center;
+    background: linear-gradient(135deg, #4f6ef7, #7c3aed);
+    color: #fff; border-radius: 16px; padding: 30px 24px;
+    width: 100%; max-width: 460px; margin: 0 auto;
+    box-shadow: 0 10px 30px rgba(79,110,247,.28);
+    text-align: center;
+  }
+  .center-box h3 { font-size: 18px; font-weight: 600; }
+  .center-box input {
+    width: 100%; max-width: 340px; padding: 11px 14px; font-size: 14px;
+    border: none; border-radius: 8px; outline: none; color: var(--text);
+  }
+  .intro-list { text-align: left; padding-left: 1.4em; font-size: 13.5px; opacity: .96; margin: 0; line-height: 1.8; }
+  .pw-hint { font-size: 12px; min-height: 16px; }
+  .pw-hint.bad { color: #ffd6d6; }
+  .pw-hint.good { color: #c6f6d5; }
+  .setup-btn { width: 100%; max-width: 340px; padding: 11px; }
+  .pw-rule { font-size: 12px; opacity: .8; }
+
+  /* 密码框 + 小眼睛 */
+  .pw-wrap { position: relative; width: 100%; }
+  .center-box .pw-wrap { max-width: 340px; }
+  .unlock-bar .pw-wrap { flex: 1; min-width: 0; }
+  .pw-wrap input { width: 100%; padding-right: 42px; }
+  /* type=text + 掩码：让浏览器密码管理器认不出这是密码框（防止保存/自动填充/被窃取） */
+  .pw-mask { -webkit-text-security: disc; }
+  .eye-btn {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: none; background: transparent; cursor: pointer;
+    font-size: 15px; color: #9ca3af; padding: 4px 6px; line-height: 1;
+  }
+  .eye-btn:hover { color: var(--primary); }
+  /* 隐藏浏览器自带的密码显示按钮，避免和自定义小眼睛重叠 */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+  input::-webkit-credentials-auto-fill-button {
+    display: none !important;
+  }
+
+  /* ===== 隐私库内部 ===== */
+  .unlock-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #4f6ef7, #7c3aed);
+    border-radius: 10px; padding: 8px; margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(79,110,247,.2);
+  }
+  .unlock-bar input {
+    width: 100%; padding: 9px 14px; font-size: 14px;
+    border: none; border-radius: 8px; outline: none; color: var(--text);
+  }
+  .unlock-bar > button {
+    padding: 9px 22px; font-size: 14px; font-weight: 600; white-space: nowrap;
+    border: none; border-radius: 8px; background: #fff; color: var(--primary); cursor: pointer;
+  }
+  .unlock-status { flex: 1; color: #fff; font-size: 14px; padding-left: 8px; }
+
+  .vault-body { position: relative; }
+  #vaultContent.locked { filter: blur(1px); opacity: .55; pointer-events: none; user-select: none; }
+  .lock-mask {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(245,246,248,.5);
+    color: #9ca3af; font-size: 14px;
+    border-radius: 10px; cursor: pointer;
+  }
+  .vault-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .vault-form input, .vault-form textarea {
+    padding: 10px 12px; font-size: 14px; border: 1px solid var(--border);
+    border-radius: 8px; outline: none; font-family: inherit;
+  }
+  .vault-form input:focus, .vault-form textarea:focus { border-color: var(--primary); }
+  .vault-form textarea { min-height: 70px; resize: vertical; }
+  .vault-form .pw-wrap input { border: 1px solid var(--border); }
+
+  .vault-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .vault-item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .vault-item-title { font-size: 15px; font-weight: 600; flex: 1; word-break: break-all; }
+  .vault-item-body { font-size: 13px; color: var(--muted); word-break: break-all; }
+  .vault-item .btn-copy, .vault-item .btn-del { padding: 4px 12px; font-size: 12px; border-radius: 6px; }
+
+  /* 弹窗 */
+  .modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(17,24,39,.35);
+    align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal.show { display: flex; animation: fadeIn .2s ease; }
+  .modal-card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    width: calc(100% - 40px); max-width: 400px;
+    display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.2);
+  }
+  .modal-card h3 { font-size: 16px; }
+  .modal-card .pw-wrap input {
+    padding: 10px 12px; font-size: 14px; border: 1px solid var(--border);
+    border-radius: 8px; outline: none;
+  }
+  .vault-form-btns { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="mainView">
+    <header>
+      <h1>📚 FishyBox</h1>
+      <p data-i18n="subtitle">收集 · 分类 · 检索 · 一键复制</p>
+      <div class="header-btns">
+        <button class="icon-btn" id="backupBtn" title="备份" data-i18n-title="backup">📦</button>
+        <button class="icon-btn" id="vaultBtn" data-i18n-title="vault" title="隐私库">🔒</button>
+        <button class="icon-btn" id="langBtn" title="语言 / Language">🌐</button>
+        <button class="btn-exit" id="exitBtn" data-i18n="exit">退出程序</button>
+      </div>
+    </header>
+
+    <div class="search-box">
+      <input id="searchInput" type="text" autocomplete="off" data-i18n-ph="search_ph" placeholder="🔍 搜索标题或内容，如：大肥鱼" />
+    </div>
+
+    <div class="form-panel">
+      <h2 data-i18n="form_title">新增 Prompt</h2>
+      <div class="form-row">
+        <input id="titleInput" type="text" autocomplete="off" data-i18n-ph="title_ph" placeholder="标题（必填）" />
+        <input id="categoryInput" type="text" autocomplete="off" maxlength="7" data-i18n-ph="category_ph" placeholder="分类标签（最多7字）" />
+      </div>
+      <div class="tag-chips" id="tagChips"></div>
+      <textarea id="contentInput" autocomplete="off" data-i18n-ph="content_ph" placeholder="Prompt 内容（必填，支持多行）"></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="saveBtn" data-i18n="save">保存</button>
+      </div>
+    </div>
+
+    <div class="results-title" id="resultsTitle"></div>
+    <div class="cards" id="results"></div>
+  </div>
+
+  <!-- 隐私库 -->
+  <div id="vaultView" hidden>
+    <div class="vault-topbar">
+      <button id="vaultBack" class="header-btn" data-i18n="back">← 返回</button>
+      <h2 class="vault-title" data-i18n="vault_title">FishyBox 隐私库</h2>
+      <div class="vault-actions">
+        <button id="btnReset" class="icon-btn" data-i18n-title="reset_pwd" title="重置密码" hidden>🔑</button>
+        <button id="btnClip" class="icon-btn" data-i18n-title="clipboard" title="剪贴板" hidden>📋</button>
+        <button id="btnVaultBackup" class="icon-btn" data-i18n-title="backup" title="备份" hidden>📦</button>
+      </div>
+    </div>
+
+    <!-- 视图1：欢迎介绍 -->
+    <div id="view-welcome" class="view active">
+      <div class="center-box">
+        <h3 data-i18n="welcome_title">欢迎使用隐私库</h3>
+        <ul class="intro-list">
+          <li data-i18n="welcome_1">你的密码等隐私内容，会用主密码加密后存在本地，不上传网络。</li>
+          <li data-i18n="welcome_2">主密码一旦忘记，数据将永久无法找回。</li>
+          <li data-i18n="welcome_3">面向个人使用：请勿存放高价值资产、企业机密或国家机密（未经第三方安全审计）。</li>
+          <li data-i18n="welcome_4">换设备时，请一并带上 database 文件夹。</li>
+        </ul>
+        <button class="btn btn-primary" id="btnStartSetup" data-i18n="start_setup">开始设置主密码</button>
+      </div>
+    </div>
+
+    <!-- 视图2：设置主密码 -->
+    <div id="view-set-pwd" class="view">
+      <div class="center-box">
+        <h3 data-i18n="setup_title">设置主密码</h3>
+        <div class="pw-wrap">
+          <input id="setPwd" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="input_pwd" placeholder="输入主密码" />
+          <button class="eye-btn" data-target="setPwd" type="button">👁</button>
+        </div>
+        <div class="pw-wrap">
+          <input id="setPwdConfirm" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="confirm_pwd" placeholder="确认主密码" />
+          <button class="eye-btn" data-target="setPwdConfirm" type="button">👁</button>
+        </div>
+        <div class="pw-hint" id="setPwdHint"></div>
+        <button class="btn btn-primary setup-btn" id="btnSetPwd" data-i18n="confirm_setup">确认设置</button>
+        <div class="pw-rule" data-i18n="pw_rule">8-32 位，至少包含一个特殊字符</div>
+      </div>
+    </div>
+
+    <!-- 视图3：隐私库内部 -->
+    <div id="view-vault" class="view">
+      <div class="unlock-bar">
+        <span class="unlock-status" id="unlockStatus" data-i18n="unlocked" hidden>✓ 已解锁</span>
+        <div class="pw-wrap" id="unlockPwWrap">
+          <input id="unlockPwd" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="input_pwd" placeholder="输入主密码" />
+          <button class="eye-btn" data-target="unlockPwd" type="button">👁</button>
+        </div>
+        <button id="btnUnlock" data-i18n="confirm">确认</button>
+        <button id="btnLock" data-i18n="lock" hidden>锁定</button>
+      </div>
+
+      <div class="vault-body">
+        <div id="vaultContent" class="locked">
+          <div class="search-box">
+            <input id="vaultSearch" type="text" data-i18n-ph="vault_search_ph" placeholder="🔍 搜索账号或备注" />
+          </div>
+
+          <div class="form-panel">
+            <h2 data-i18n="vault_form_title">添加账密卡片</h2>
+            <div class="vault-form">
+              <input id="vaultTitle" type="text" autocomplete="off" data-i18n-ph="title_ph" placeholder="标题（必填）" />
+              <input id="vaultUsername" type="text" autocomplete="off" data-i18n-ph="username_ph" placeholder="账号" />
+              <div class="pw-wrap">
+                <input id="vaultPasswordVal" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="password_ph" placeholder="密码" />
+                <button class="eye-btn" data-target="vaultPasswordVal" type="button">👁</button>
+              </div>
+              <textarea id="vaultNotes" autocomplete="off" data-i18n-ph="notes_ph" placeholder="备注"></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" id="btnSaveVault" data-i18n="vault_save">保存到本地加密库</button>
+            </div>
+          </div>
+
+          <div class="results-title" id="vaultResultsTitle"></div>
+          <div class="cards" id="vaultList"></div>
+        </div>
+
+        <div id="vaultLockMask" class="lock-mask" data-i18n="vault_lock_hint">🔒 请输入主密码以开启功能</div>
+      </div>
+    </div>
+
+    <!-- 弹窗：重置主密码 -->
+    <div id="vaultResetForm" class="modal">
+      <div class="modal-card">
+        <h3 data-i18n="reset_title">重置主密码</h3>
+        <div class="pw-wrap">
+          <input id="resetPwd" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="new_pwd" placeholder="新主密码" />
+          <button class="eye-btn" data-target="resetPwd" type="button">👁</button>
+        </div>
+        <div class="pw-wrap">
+          <input id="resetPwdConfirm" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="confirm_new_pwd" placeholder="确认新主密码" />
+          <button class="eye-btn" data-target="resetPwdConfirm" type="button">👁</button>
+        </div>
+        <div class="pw-hint" id="resetHint"></div>
+        <div class="vault-form-btns">
+          <button class="btn btn-primary" id="btnResetSave" data-i18n="confirm_reset">确认重置</button>
+          <button class="btn" id="btnResetCancel" data-i18n="cancel">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗：剪贴板自动清除设置 -->
+    <div id="clipboardForm" class="modal">
+      <div class="modal-card">
+        <h3 data-i18n="clip_title">剪贴板自动清除</h3>
+        <p class="modal-desc" data-i18n="clip_desc">复制密码后，剪贴板中的内容可能被其他程序读取。开启后会在指定时间自动清空剪贴板。</p>
+        <div class="clip-row">
+          <span data-i18n="clip_enable">自动清除剪贴板</span>
+          <button id="clipToggle" class="clip-switch" type="button" data-on="0"></button>
+        </div>
+        <div id="clipSecWrap" class="clip-row" hidden>
+          <span data-i18n="clip_seconds">清除时间（秒，最短 5）</span>
+          <input id="clipSecInput" type="number" min="5" value="30" />
+        </div>
+        <div id="clipPwWrap" class="pw-wrap" hidden>
+          <input id="clipPw" type="text" class="pw-mask" autocomplete="new-password" data-i18n-ph="clip_pw_ph" placeholder="输入主密码以验证" />
+          <button class="eye-btn" data-target="clipPw" type="button">👁</button>
+        </div>
+        <div class="pw-hint" id="clipHintMsg"></div>
+        <div class="vault-form-btns">
+          <button class="btn btn-primary" id="btnClipSave" data-i18n="save">保存</button>
+          <button class="btn" id="btnClipCancel" data-i18n="cancel">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗：首次复制密码提示 -->
+    <div id="clipHintModal" class="modal">
+      <div class="modal-card">
+        <h3 data-i18n="clip_hint_title">温馨提示</h3>
+        <p class="modal-desc" data-i18n="clip_hint_body">复制密码后，剪贴板中的内容容易被其他程序读取，可能导致个人信息泄露。本程序自带「剪贴板自动清除」功能，建议前往顶部开启。</p>
+        <div class="vault-form-btns">
+          <button class="btn btn-primary" id="btnClipHintGo" data-i18n="clip_hint_go">去设置</button>
+          <button class="btn" id="btnClipHintOk" data-i18n="got_it">知道了</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 通用对话框（放最外层，任何视图都能用） -->
+<div id="dialogModal" class="modal">
+  <div class="modal-card">
+    <h3 id="dialogTitle"></h3>
+    <p id="dialogMessage" class="modal-desc"></p>
+    <input id="dialogInput" type="text" autocomplete="off" hidden />
+    <div class="vault-form-btns" id="dialogBtns"></div>
+  </div>
+</div>
+
+<!-- 弹窗：备份与恢复（普通 Prompt） -->
+<div id="backupForm" class="modal">
+  <div class="modal-card">
+    <h3 data-i18n="backup_title">备份与恢复</h3>
+    <p class="modal-desc" data-i18n="backup_desc">导出全部 Prompt 为 Markdown 文件，或从备份文件恢复。</p>
+    <div class="backup-btns">
+      <button class="btn btn-primary" id="btnExportPrompts" data-i18n="export_prompts_btn">导出 Prompt（.md）</button>
+      <button class="btn" id="btnImportPrompts" data-i18n="import_prompts_btn">导入 Prompt（.md）</button>
+      <button class="btn" id="btnBackupDb" data-i18n="backup_db">备份数据库（复制到 backup/）</button>
+    </div>
+    <input type="file" id="importFileInput" accept=".md,.txt" hidden />
+    <div class="vault-form-btns">
+      <button class="btn" id="btnBackupClose" data-i18n="close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗：隐私库备份 -->
+<div id="vaultBackupForm" class="modal">
+  <div class="modal-card">
+    <h3 data-i18n="vault_backup_title">隐私库备份</h3>
+    <p class="modal-desc" data-i18n="vault_backup_desc">导出的备份文件是加密的；导入时需要输入当时的备份密码。</p>
+    <div class="backup-btns">
+      <button class="btn btn-primary" id="btnExportVault" data-i18n="export_vault_btn">导出加密备份</button>
+      <button class="btn" id="btnImportVault" data-i18n="import_vault_btn">导入加密备份</button>
+    </div>
+    <input type="file" id="vaultFileInput" accept=".fishybox,.txt,.json" hidden />
+    <div class="vault-form-btns">
+      <button class="btn" id="btnVaultBackupClose" data-i18n="close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/marked.min.js"></script>
+<script src="/static/purify.min.js"></script>
+<script src="/static/highlight.min.js"></script>
+<script>
+// ============ i18n ============
+const I18N = {
+  zh: {
+    subtitle: '收集 · 分类 · 检索 · 一键复制',
+    vault: '隐私库',
+    exit: '退出程序',
+    search_ph: '🔍 搜索标题或内容，如：大肥鱼',
+    form_title: '新增 Prompt',
+    title_ph: '标题（必填）',
+    category_ph: '分类标签',
+    content_ph: 'Prompt 内容（必填，支持多行）',
+    save: '保存',
+    uncategorized: '未分类',
+    copy: '一键复制',
+    copied: '✓ 已复制',
+    delete: '删除',
+    all_prompts: '全部 Prompt（{n} 条）',
+    search_results: '「{q}」的搜索结果（{n} 条）',
+    empty: '暂无数据，去上面添加一条吧 ✍️',
+    copy_fail: '复制失败，请手动复制',
+    title_content_required: '标题和内容不能为空',
+    save_fail: '保存失败',
+    delete_prompt_confirm: '确定删除这条 Prompt 吗？',
+    delete_fail: '删除失败',
+
+    back: '← 返回',
+    reset_pwd: '重置密码',
+    vault_title: 'FishyBox 隐私库',
+    welcome_title: '欢迎使用隐私库',
+    welcome_1: '你的密码等隐私内容，会用主密码加密后存在本地，不上传网络。',
+    welcome_2: '主密码一旦忘记，数据将永久无法找回。',
+    welcome_3: '面向个人使用：请勿存放高价值资产、企业机密或国家机密（未经第三方安全审计）。',
+    welcome_4: '换设备时，请一并带上 database 文件夹。',
+    start_setup: '开始设置主密码',
+    setup_title: '设置主密码',
+    input_pwd: '输入主密码',
+    confirm_pwd: '确认主密码',
+    confirm_setup: '确认设置',
+    pw_rule: '8-32 位，至少包含一个特殊字符',
+    pw_ok: '✓ 符合要求',
+    unlocked: '✓ 已解锁',
+    confirm: '确认',
+    lock: '锁定',
+    vault_search_ph: '🔍 搜索账号或备注',
+    vault_form_title: '添加账密卡片',
+    username_ph: '账号',
+    password_ph: '密码',
+    notes_ph: '备注',
+    vault_save: '保存到本地加密库',
+    vault_lock_hint: '🔒 请输入主密码以开启功能',
+    all_creds: '全部账密（{n} 条）',
+    no_creds: '暂无账密，点上面添加一条',
+    copy_pwd: '复制密码',
+    no_extra: '（无附加信息）',
+    account_prefix: '账号 ',
+
+    reset_title: '重置主密码',
+    new_pwd: '新主密码',
+    confirm_new_pwd: '确认新主密码',
+    confirm_reset: '确认重置',
+    cancel: '取消',
+
+    pw_short: '至少 8 位',
+    pw_long: '最多 32 位',
+    pw_special: '需包含至少一个特殊字符（如 @ # ￥ &）',
+    pw_mismatch: '两次输入的密码不一致',
+    setup_fail: '设置失败',
+    enter_pwd: '请输入主密码',
+    wrong_pwd: '主密码错误',
+    unlock_first: '请先解锁再重置主密码',
+    reset_fail: '重置失败',
+    exit_confirm: '确定退出程序吗？',
+    delete_item_confirm: '删除该条目？',
+    title_required: '标题不能为空',
+    auto_locked: '隐私库已自动锁定（5 分钟无操作）',
+    add_tag_prompt: '输入标签名（最多 7 字）',
+    tag_too_long: '标签最多 7 个字',
+    add_tag_failed: '添加失败',
+    delete_tag_confirm: '删除该标签？',
+    clipboard: '剪贴板',
+    clip_prompt_pw: '请输入主密码',
+    clip_prompt_sec: '自动清除秒数（0=关闭，最短 5 秒）',
+    clip_invalid: '秒数无效',
+    clip_fail: '设置失败',
+    clip_saved_on: '已开启：复制密码后 {n} 秒自动清除剪贴板',
+    clip_saved_off: '已关闭剪贴板自动清除',
+    delete_mode: '删除模式',
+    clip_title: '剪贴板自动清除',
+    clip_desc: '复制密码后，剪贴板中的内容可能被其他程序读取。开启后会在指定时间自动清空剪贴板。',
+    clip_enable: '自动清除剪贴板',
+    clip_seconds: '清除时间（秒，最短 5）',
+    clip_pw_ph: '输入主密码以验证',
+    clip_need_pw: '请输入主密码',
+    clip_sec_invalid: '清除时间最短 5 秒',
+    clip_hint_title: '温馨提示',
+    clip_hint_body: '复制密码后，剪贴板中的内容容易被其他程序读取，可能导致个人信息泄露。本程序自带「剪贴板自动清除」功能，建议前往顶部开启。',
+    clip_hint_go: '去设置',
+    got_it: '知道了',
+    ok: '确定',
+    tip: '提示',
+    confirm_title: '请确认',
+    input_title: '请输入',
+    backup: '备份',
+    backup_title: '备份与恢复',
+    backup_desc: '导出全部 Prompt 为 Markdown 文件，或从备份文件恢复。',
+    vault_backup_title: '隐私库备份',
+    vault_backup_desc: '导出的备份文件是加密的；导入时需要输入当时的备份密码。',
+    export_ok: '已导出 {n} 条',
+    export_fail: '导出失败',
+    import_ok: '已导入 {n} 条',
+    import_fail: '导入失败',
+    vault_import_pw: '输入备份密码',
+    export_prompts_btn: '导出 Prompt（.md）',
+    import_prompts_btn: '导入 Prompt（.md）',
+    export_vault_btn: '导出加密备份',
+    import_vault_btn: '导入加密备份',
+    close: '关闭',
+    i_understand: '我已知晓',
+    export_warn_title: '导出前请注意',
+    export_warn_body: '导出会生成一个包含你全部密码的备份文件（已加密）。\n\n请妥善保管：\n① 不要上传到网盘、聊天工具或邮箱；\n② 用完及时删除；\n③ 不要把文件发给任何人。\n\n一旦文件泄露，所有密码都可能被还原。',
+    backup_db: '备份数据库（复制到 backup/）',
+    backup_ok: '已备份到 backup/{name}/',
+    backup_fail: '备份失败',
+  },
+  en: {
+    subtitle: 'Collect · Categorize · Search · One-click copy',
+    vault: 'Vault',
+    exit: 'Exit',
+    search_ph: '🔍 Search title or content...',
+    form_title: 'Add Prompt',
+    title_ph: 'Title (required)',
+    category_ph: 'Category tag',
+    content_ph: 'Prompt content (required, multi-line)',
+    save: 'Save',
+    uncategorized: 'Uncategorized',
+    copy: 'Copy',
+    copied: '✓ Copied',
+    delete: 'Delete',
+    all_prompts: 'All Prompts ({n})',
+    search_results: 'Search results for "{q}" ({n})',
+    empty: 'No data yet, add one above ✍️',
+    copy_fail: 'Copy failed, please copy manually',
+    title_content_required: 'Title and content are required',
+    save_fail: 'Save failed',
+    delete_prompt_confirm: 'Delete this prompt?',
+    delete_fail: 'Delete failed',
+
+    back: '← Back',
+    reset_pwd: 'Reset password',
+    vault_title: 'FishyBox Vault',
+    welcome_title: 'Welcome to the Vault',
+    welcome_1: 'Your passwords and private data are encrypted with a master password and stored locally, never uploaded.',
+    welcome_2: 'If you forget your master password, your data cannot be recovered.',
+    welcome_3: 'For personal use only: do not store high-value assets, enterprise secrets, or classified information (not third-party audited).',
+    welcome_4: 'When switching devices, bring the database folder with you.',
+    start_setup: 'Start setting up master password',
+    setup_title: 'Set master password',
+    input_pwd: 'Enter master password',
+    confirm_pwd: 'Confirm master password',
+    confirm_setup: 'Confirm',
+    pw_rule: '8-32 characters, at least one special character',
+    pw_ok: '✓ Valid',
+    unlocked: '✓ Unlocked',
+    confirm: 'Confirm',
+    lock: 'Lock',
+    vault_search_ph: '🔍 Search account or notes',
+    vault_form_title: 'Add credential',
+    username_ph: 'Account',
+    password_ph: 'Password',
+    notes_ph: 'Notes',
+    vault_save: 'Save to encrypted vault',
+    vault_lock_hint: '🔒 Enter master password to unlock',
+    all_creds: 'All credentials ({n})',
+    no_creds: 'No credentials yet, add one above',
+    copy_pwd: 'Copy password',
+    no_extra: '(no extra info)',
+    account_prefix: 'Account ',
+
+    reset_title: 'Reset master password',
+    new_pwd: 'New master password',
+    confirm_new_pwd: 'Confirm new master password',
+    confirm_reset: 'Confirm reset',
+    cancel: 'Cancel',
+
+    pw_short: 'At least 8 characters',
+    pw_long: 'At most 32 characters',
+    pw_special: 'Must contain a special character (e.g. @ # ! &)',
+    pw_mismatch: 'Passwords do not match',
+    setup_fail: 'Setup failed',
+    enter_pwd: 'Enter master password',
+    wrong_pwd: 'Wrong master password',
+    unlock_first: 'Unlock first to reset master password',
+    reset_fail: 'Reset failed',
+    exit_confirm: 'Exit the program?',
+    delete_item_confirm: 'Delete this item?',
+    title_required: 'Title cannot be empty',
+    auto_locked: 'Vault auto-locked (5 minutes of inactivity)',
+    add_tag_prompt: 'Enter tag name (max 7 chars)',
+    tag_too_long: 'Tag can be at most 7 characters',
+    add_tag_failed: 'Failed to add tag',
+    delete_tag_confirm: 'Delete this tag?',
+    clipboard: 'Clipboard',
+    clip_prompt_pw: 'Enter master password',
+    clip_prompt_sec: 'Auto-clear seconds (0=off, min 5)',
+    clip_invalid: 'Invalid seconds',
+    clip_fail: 'Failed to save',
+    clip_saved_on: 'Enabled: clipboard cleared {n}s after copying a password',
+    clip_saved_off: 'Clipboard auto-clear disabled',
+    delete_mode: 'Delete mode',
+    clip_title: 'Clipboard auto-clear',
+    clip_desc: 'After copying a password, other programs may read it from the clipboard. When enabled, the clipboard will be cleared automatically.',
+    clip_enable: 'Auto-clear clipboard',
+    clip_seconds: 'Clear after (seconds, min 5)',
+    clip_pw_ph: 'Enter master password',
+    clip_need_pw: 'Please enter your master password',
+    clip_sec_invalid: 'Minimum is 5 seconds',
+    clip_hint_title: 'Tip',
+    clip_hint_body: 'After copying a password, other programs may read it from the clipboard, which could leak your personal information. FishyBox has a built-in "clipboard auto-clear" feature — we recommend enabling it from the top bar.',
+    clip_hint_go: 'Set it up',
+    got_it: 'Got it',
+    ok: 'OK',
+    tip: 'Notice',
+    confirm_title: 'Confirm',
+    input_title: 'Input',
+    backup: 'Backup',
+    backup_title: 'Backup & Restore',
+    backup_desc: 'Export all prompts as a Markdown file, or restore from a backup file.',
+    vault_backup_title: 'Vault Backup',
+    vault_backup_desc: 'The exported file is encrypted; you will need the backup password to import it.',
+    export_ok: 'Exported {n} items',
+    export_fail: 'Export failed',
+    import_ok: 'Imported {n} items',
+    import_fail: 'Import failed',
+    vault_import_pw: 'Enter the backup password',
+    export_prompts_btn: 'Export prompts (.md)',
+    import_prompts_btn: 'Import prompts (.md)',
+    export_vault_btn: 'Export encrypted backup',
+    import_vault_btn: 'Import encrypted backup',
+    close: 'Close',
+    i_understand: 'I understand',
+    export_warn_title: 'Before exporting',
+    export_warn_body: 'Exporting creates a backup file containing all your passwords (encrypted).\n\nPlease keep it safe:\n① never upload it to cloud drives, chat apps, or email;\n② delete it when you no longer need it;\n③ never send it to anyone.\n\nIf the file leaks, all your passwords can be restored.',
+    backup_db: 'Back up database (copy to backup/)',
+    backup_ok: 'Backed up to backup/{name}/',
+    backup_fail: 'Backup failed',
+  },
+};
+
+let LANG = localStorage.getItem('lang');
+if (!LANG) {
+  // 没存过语言：检查浏览器语言列表（含次选），有中文就用中文，否则英文
+  const langs = (navigator.languages && navigator.languages.length)
+    ? navigator.languages
+    : [navigator.language || ''];
+  const hasZh = langs.some((l) => (l || '').toLowerCase().startsWith('zh'));
+  LANG = hasZh ? 'zh' : 'en';
+}
+
+function t(key, vars) {
+  let s = (I18N[LANG] && I18N[LANG][key]) || I18N.zh[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach((k) => {
+      s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);
+    });
+  }
+  return s;
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPh);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+}
+
+function setLang(lang) {
+  LANG = lang;
+  localStorage.setItem('lang', lang);
+  applyI18n();
+  // 刷新动态内容（标签名走数据库的 name_zh / name_en）
+  renderTags();
+  loadPrompts($('searchInput').value.trim());
+  if (!$('vaultView').hidden && $('view-vault').classList.contains('active')) {
+    renderVaultList();
+  }
+}
+
+// ===== 通用对话框（替代浏览器 alert / confirm / prompt） =====
+let dlgResolve = null;
+let dlgHasInput = false;
+
+function closeDialog(val) {
+  $('dialogModal').classList.remove('show');
+  if (dlgResolve) {
+    const r = dlgResolve;
+    dlgResolve = null;
+    r(val);
+  }
+}
+
+function showDialog(opts) {
+  $('dialogTitle').textContent = opts.title || '';
+  $('dialogMessage').textContent = opts.message || '';
+  $('dialogMessage').hidden = !opts.message;
+  const inp = $('dialogInput');
+  dlgHasInput = opts.input !== undefined;
+  inp.hidden = !dlgHasInput;
+  if (dlgHasInput) inp.value = opts.input;
+  const btns = $('dialogBtns');
+  btns.innerHTML = '';
+  (opts.buttons || []).forEach((b) => {
+    const el = document.createElement('button');
+    el.className = 'btn' + (b.primary ? ' btn-primary' : '');
+    el.textContent = b.text;
+    el.addEventListener('click', () => {
+      closeDialog(dlgHasInput ? (b.cancel ? null : inp.value) : b.value);
+    });
+    btns.appendChild(el);
+  });
+  $('dialogModal').classList.add('show');
+  if (dlgHasInput) setTimeout(() => inp.focus(), 50);
+  return new Promise((res) => { dlgResolve = res; });
+}
+
+function appAlert(msg) {
+  return showDialog({
+    title: t('tip'),
+    message: msg,
+    buttons: [{ text: t('got_it'), value: true, primary: true }],
+  });
+}
+
+function appConfirm(msg) {
+  return showDialog({
+    title: t('confirm_title'),
+    message: msg,
+    buttons: [
+      { text: t('cancel'), value: false },
+      { text: t('ok'), value: true, primary: true },
+    ],
+  });
+}
+
+function appPrompt(msg, def = '') {
+  return showDialog({
+    title: t('input_title'),
+    message: msg,
+    input: def,
+    buttons: [
+      { text: t('cancel'), cancel: true },
+      { text: t('ok'), primary: true },
+    ],
+  });
+}
+
+// ============ 通用 ============
+const API = '/api/prompts';
+const $ = (id) => document.getElementById(id);
+
+function debounce(fn, ms) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+function renderMarkdown(container, md) {
+  const raw = marked.parse(md || '');
+  const clean = DOMPurify.sanitize(raw);
+  container.innerHTML = clean;
+  container.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+}
+
+// ============ Prompt 主功能 ============
+async function loadPrompts(q = '') {
+  const url = q ? `${API}?q=${encodeURIComponent(q)}` : API;
+  const res = await fetch(url);
+  const data = await res.json();
+  render(data);
+  $('resultsTitle').textContent = q ? t('search_results', { q, n: data.length }) : t('all_prompts', { n: data.length });
+}
+
+function render(list) {
+  const wrap = $('results');
+  wrap.innerHTML = '';
+  if (list.length === 0) {
+    wrap.innerHTML = '<div class="empty">' + t('empty') + '</div>';
+    return;
+  }
+  list.forEach((p) => wrap.appendChild(buildCard(p)));
+}
+
+function buildCard(p) {
+  const full = p.content;
+  const preview = full.length > 120 ? full.slice(0, 120) + ' …' : full;
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const head = document.createElement('div');
+  head.className = 'card-head';
+  const title = document.createElement('h3');
+  title.className = 'card-title';
+  title.textContent = p.title;
+  const tag = document.createElement('span');
+  tag.className = 'tag';
+  tag.textContent = p.category || t('uncategorized');
+  head.appendChild(title);
+  head.appendChild(tag);
+
+  const content = document.createElement('div');
+  content.className = 'card-content';
+  renderMarkdown(content, preview);
+  content.addEventListener('click', () => {
+    const expanded = content.getAttribute('data-expanded') === '1';
+    renderMarkdown(content, expanded ? preview : full);
+    content.setAttribute('data-expanded', expanded ? '0' : '1');
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'card-actions';
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn btn-copy';
+  copyBtn.textContent = t('copy');
+  copyBtn.addEventListener('click', () => copyText(full, copyBtn));
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn btn-del';
+  delBtn.textContent = t('delete');
+  delBtn.addEventListener('click', () => removePrompt(p.id));
+  actions.appendChild(copyBtn);
+  actions.appendChild(delBtn);
+
+  card.appendChild(head);
+  card.appendChild(content);
+  card.appendChild(actions);
+  return card;
+}
+
+let clipSec = 0;  // 剪贴板自动清除秒数（0=关闭），从后端读取
+
+async function copyText(text, btn, isSecret = false) {
+  let ok = false;
+  try {
+    await navigator.clipboard.writeText(text);
+    ok = true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    document.body.removeChild(ta);
+  }
+  if (ok) {
+    const origin = btn.textContent;
+    btn.textContent = t('copied');
+    btn.style.background = '#16a34a';
+    setTimeout(() => { btn.textContent = origin; btn.style.background = ''; }, 1500);
+    // 剪贴板自动清除（只对密码复制路径生效）
+    if (isSecret) {
+      if (clipSec > 0) {
+        setTimeout(() => {
+          navigator.clipboard.writeText('').catch(() => {});
+        }, clipSec * 1000);
+      } else {
+        maybeShowClipHint();
+      }
+    }
+  } else {
+    await appAlert(t('copy_fail'));
+  }
+}
+
+async function savePrompt() {
+  const title = $('titleInput').value.trim();
+  const category = $('categoryInput').value.trim();
+  const content = $('contentInput').value.trim();
+  if (!title || !content) { await appAlert(t('title_content_required')); return; }
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, category, content }),
+  });
+  if (!res.ok) { await appAlert(t('save_fail')); return; }
+  $('titleInput').value = '';
+  $('categoryInput').value = '';
+  $('contentInput').value = '';
+  loadPrompts($('searchInput').value.trim());
+}
+
+async function removePrompt(id) {
+  if (!(await appConfirm(t('delete_prompt_confirm')))) return;
+  const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+  if (res.ok) loadPrompts($('searchInput').value.trim());
+  else await appAlert(t('delete_fail'));
+}
+
+// ============ 隐私库向导 ============
+let vaultToken = null;
+let vaultItems = [];
+
+function showMain() {
+  $('mainView').hidden = false;
+  $('vaultView').hidden = true;
+}
+
+function showVault() {
+  $('mainView').hidden = true;
+  $('vaultView').hidden = false;
+  refreshVault();
+}
+
+function showView(viewId) {
+  document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  $(viewId).classList.add('active');
+  $('btnReset').hidden = viewId !== 'view-vault';
+  $('btnClip').hidden = viewId !== 'view-vault';
+  $('btnVaultBackup').hidden = viewId !== 'view-vault';
+}
+
+async function refreshVault() {
+  let status;
+  try { status = await (await fetch('/api/vault/status')).json(); }
+  catch (e) { return; }
+  if (!status.initialized) {
+    showView('view-welcome');
+  } else {
+    showView('view-vault');
+    setVaultLocked(!vaultToken);
+    if (vaultToken) loadVaultItems();
+  }
+}
+
+function setVaultLocked(locked) {
+  $('vaultContent').classList.toggle('locked', locked);
+  $('vaultLockMask').style.display = locked ? 'flex' : 'none';
+  $('unlockStatus').hidden = locked;
+  $('unlockPwWrap').hidden = !locked;
+  $('btnUnlock').hidden = !locked;
+  $('btnLock').hidden = locked;
+  $('btnReset').hidden = locked;
+  $('btnClip').hidden = locked;
+  $('btnVaultBackup').hidden = locked;
+}
+
+// ============ 设置主密码 ============
+const SPECIAL_RE = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~￥、。，]/;
+
+function validatePassword(pw) {
+  if (pw.length < 8) return t('pw_short');
+  if (pw.length > 32) return t('pw_long');
+  if (!SPECIAL_RE.test(pw)) return t('pw_special');
+  return '';
+}
+
+async function vaultSetup() {
+  const pw = $('setPwd').value;
+  const confirm = $('setPwdConfirm').value;
+  const err = validatePassword(pw);
+  if (err) { await appAlert(err); return; }
+  if (pw !== confirm) { await appAlert(t('pw_mismatch')); return; }
+  const res = await fetch('/api/vault/setup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw }),
+  });
+  const data = await res.json();
+  if (!res.ok) { await appAlert(data.detail || t('setup_fail')); return; }
+  vaultToken = data.token;
+  $('setPwd').value = '';
+  $('setPwdConfirm').value = '';
+  $('setPwdHint').textContent = '';
+  showView('view-vault');
+  setVaultLocked(false);
+  loadVaultItems();
+}
+
+function bindPasswordHint(inputId, hintId) {
+  $(inputId).addEventListener('input', () => {
+    const err = validatePassword($(inputId).value);
+    const hint = $(hintId);
+    hint.textContent = err || t('pw_ok');
+    hint.className = 'pw-hint' + (err ? ' bad' : ' good');
+  });
+}
+
+// ============ 隐私库内部 ============
+async function vaultUnlock() {
+  const password = $('unlockPwd').value;
+  if (!password) { await appAlert(t('enter_pwd')); return; }
+  const res = await fetch('/api/vault/unlock', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const data = await res.json();
+  if (!res.ok) { await appAlert(data.detail || t('wrong_pwd')); return; }
+  vaultToken = data.token;
+  $('unlockPwd').value = '';
+  setVaultLocked(false);
+  loadVaultItems();
+}
+
+async function vaultLock() {
+  await fetch('/api/vault/lock', { method: 'POST', headers: { 'X-Vault-Token': vaultToken } });
+  vaultToken = null;
+  vaultItems = [];
+  // 锁定后清空列表和表单，页面上不留任何密文
+  $('vaultList').innerHTML = '';
+  $('vaultTitle').value = '';
+  $('vaultUsername').value = '';
+  $('vaultPasswordVal').value = '';
+  $('vaultNotes').value = '';
+  setVaultLocked(true);
+}
+
+async function loadVaultItems() {
+  const res = await fetch('/api/vault/items', { headers: { 'X-Vault-Token': vaultToken } });
+  if (!res.ok) {
+    vaultToken = null;
+    vaultItems = [];
+    $('vaultList').innerHTML = '';
+    setVaultLocked(true);
+    return;
+  }
+  vaultItems = await res.json();
+  renderVaultList();
+}
+
+function renderVaultList() {
+  const q = ($('vaultSearch').value || '').trim().toLowerCase();
+  const list = $('vaultList');
+  list.innerHTML = '';
+  const filtered = q
+    ? vaultItems.filter((it) => (it.title + it.username + it.notes).toLowerCase().includes(q))
+    : vaultItems;
+  $('vaultResultsTitle').textContent = q ? t('search_results', { q, n: filtered.length }) : t('all_creds', { n: filtered.length });
+  if (filtered.length === 0) {
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = t('no_creds');
+    list.appendChild(e);
+    return;
+  }
+  for (const it of filtered) {
+    const card = document.createElement('div');
+    card.className = 'vault-item';
+
+    const head = document.createElement('div');
+    head.className = 'vault-item-head';
+    const title = document.createElement('span');
+    title.className = 'vault-item-title';
+    title.textContent = it.title;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy';
+    copyBtn.textContent = t('copy_pwd');
+    copyBtn.addEventListener('click', () => copyText(it.password, copyBtn, true));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-del';
+    delBtn.textContent = t('delete');
+    delBtn.addEventListener('click', async () => {
+      if (!(await appConfirm(t('delete_item_confirm')))) return;
+      const r = await fetch(`/api/vault/items/${it.id}`, { method: 'DELETE', headers: { 'X-Vault-Token': vaultToken } });
+      if (r.ok) loadVaultItems();
+    });
+
+    head.appendChild(title);
+    head.appendChild(copyBtn);
+    head.appendChild(delBtn);
+
+    const body = document.createElement('div');
+    body.className = 'vault-item-body';
+    const parts = [];
+    if (it.username) parts.push(t('account_prefix') + it.username);
+    if (it.notes) parts.push(it.notes);
+    body.textContent = parts.join(' · ') || t('no_extra');
+
+    card.appendChild(head);
+    card.appendChild(body);
+    list.appendChild(card);
+  }
+}
+
+async function vaultSave() {
+  const title = $('vaultTitle').value.trim();
+  if (!title) { await appAlert(t('title_required')); return; }
+  const res = await fetch('/api/vault/items', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Vault-Token': vaultToken },
+    body: JSON.stringify({
+      title,
+      username: $('vaultUsername').value,
+      password: $('vaultPasswordVal').value,
+      notes: $('vaultNotes').value,
+    }),
+  });
+  if (!res.ok) { await appAlert(t('save_fail')); return; }
+  $('vaultTitle').value = '';
+  $('vaultUsername').value = '';
+  $('vaultPasswordVal').value = '';
+  $('vaultNotes').value = '';
+  loadVaultItems();
+}
+
+async function vaultReset() {
+  const pw = $('resetPwd').value;
+  const confirm = $('resetPwdConfirm').value;
+  const err = validatePassword(pw);
+  if (err) { await appAlert(err); return; }
+  if (pw !== confirm) { await appAlert(t('pw_mismatch')); return; }
+  const res = await fetch('/api/vault/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Vault-Token': vaultToken },
+    body: JSON.stringify({ password: pw }),
+  });
+  const data = await res.json();
+  if (!res.ok) { await appAlert(data.detail || t('reset_fail')); return; }
+  vaultToken = data.token;
+  $('resetPwd').value = '';
+  $('resetPwdConfirm').value = '';
+  $('resetHint').textContent = '';
+  $('vaultResetForm').classList.remove('show');
+  loadVaultItems();
+}
+
+// ============ 绑定事件 ============
+$('saveBtn').addEventListener('click', savePrompt);
+
+// ===== 快捷标签（数据库 + 拖拽排序 + 增删） =====
+let tagList = [];
+let dragId = null;
+let deleteMode = false;
+
+function tagName(tg) {
+  return (LANG === 'en' && tg.name_en) ? tg.name_en : tg.name_zh;
+}
+
+function renderTags() {
+  const box = $('tagChips');
+  if (!box) return;
+  box.innerHTML = '';
+  const input = $('categoryInput');
+  tagList.forEach((tg) => {
+    const el = document.createElement('span');
+    el.className = 'chip'
+      + (input.value === tagName(tg) ? ' active' : '')
+      + (deleteMode ? ' deleting' : '');
+    el.draggable = !deleteMode;
+    el.dataset.id = tg.id;
+    el.textContent = tagName(tg);
+    el.addEventListener('click', async () => {
+      if (deleteMode) {
+        if (!(await appConfirm(t('delete_tag_confirm')))) return;
+        await fetch('/api/tags/' + tg.id, { method: 'DELETE' });
+        await loadTags();
+        return;
+      }
+      input.value = tagName(tg);
+      renderTags();
+    });
+    if (!deleteMode) {
+      el.addEventListener('dragstart', () => { dragId = tg.id; });
+      el.addEventListener('dragover', (e) => { e.preventDefault(); });
+      el.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        if (dragId === null || dragId === tg.id) return;
+        const from = tagList.findIndex((x) => x.id === dragId);
+        const to = tagList.findIndex((x) => x.id === tg.id);
+        if (from < 0 || to < 0) return;
+        const moved = tagList.splice(from, 1)[0];
+        tagList.splice(to, 0, moved);
+        dragId = null;
+        renderTags();
+        await fetch('/api/tags/order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: tagList.map((x) => x.id) }),
+        });
+      });
+    }
+    box.appendChild(el);
+  });
+  // 新增按钮
+  const add = document.createElement('span');
+  add.className = 'chip chip-add';
+  add.textContent = '+';
+  add.title = t('add_tag_prompt');
+  add.addEventListener('click', async () => {
+    const name = await appPrompt(t('add_tag_prompt'));
+    if (!name) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 7) { await appAlert(t('tag_too_long')); return; }
+    const r = await fetch('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name_zh: trimmed, name_en: trimmed }),
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      await appAlert(d.detail || t('add_tag_failed'));
+      return;
+    }
+    await loadTags();
+  });
+  box.appendChild(add);
+  // 删除模式开关（避免误触，单独的开关）
+  const delBtn = document.createElement('span');
+  delBtn.className = 'chip chip-del' + (deleteMode ? ' chip-del-on' : '');
+  delBtn.textContent = '🗑';
+  delBtn.title = t('delete_mode');
+  delBtn.addEventListener('click', () => {
+    deleteMode = !deleteMode;
+    renderTags();
+  });
+  box.appendChild(delBtn);
+}
+
+async function loadTags() {
+  try {
+    const r = await fetch('/api/tags');
+    tagList = await r.json();
+  } catch (e) {
+    tagList = [];
+  }
+  renderTags();
+}
+$('searchInput').addEventListener('input', debounce((e) => loadPrompts(e.target.value.trim()), 300));
+$('exitBtn').addEventListener('click', async () => {
+  if (!(await appConfirm(t('exit_confirm')))) return;
+  try { await fetch('/api/shutdown', { method: 'POST' }); } catch (e) {}
+  // 后台已请求退出，尝试关闭独立窗口（Edge App 模式支持 window.close）
+  setTimeout(() => {
+    try { window.close(); } catch (e) {}
+    // 若窗口没关掉，给出提示（避免用户以为"没退出"）
+    setTimeout(() => {
+      document.body.innerHTML =
+        '<div style="padding:80px 20px;text-align:center;font-family:system-ui,sans-serif;color:#64748b">'
+        + '<h2 style="color:#111827;margin-bottom:12px">已退出</h2>'
+        + '<p>后台服务已停止，请直接关闭此窗口。</p></div>';
+    }, 600);
+  }, 400);
+});
+$('langBtn').addEventListener('click', () => setLang(LANG === 'zh' ? 'en' : 'zh'));
+
+$('vaultBtn').addEventListener('click', showVault);
+$('vaultBack').addEventListener('click', showMain);
+$('btnStartSetup').addEventListener('click', () => showView('view-set-pwd'));
+$('btnSetPwd').addEventListener('click', vaultSetup);
+$('btnUnlock').addEventListener('click', vaultUnlock);
+$('btnLock').addEventListener('click', vaultLock);
+$('btnSaveVault').addEventListener('click', vaultSave);
+$('vaultSearch').addEventListener('input', debounce(renderVaultList, 200));
+$('vaultLockMask').addEventListener('click', () => {
+  $('unlockPwd').focus();
+});
+$('btnReset').addEventListener('click', async () => {
+  if (!vaultToken) { await appAlert(t('unlock_first')); return; }
+  $('vaultResetForm').classList.add('show');
+});
+$('btnResetCancel').addEventListener('click', () => {
+  $('vaultResetForm').classList.remove('show');
+});
+$('btnResetSave').addEventListener('click', vaultReset);
+
+// ===== 剪贴板自动清除（正式面板） =====
+function syncClipUI() {
+  const on = $('clipToggle').dataset.on === '1';
+  $('clipSecWrap').hidden = !on;
+  $('clipPwWrap').hidden = !on;
+  $('clipHintMsg').textContent = '';
+}
+
+function openClipModal() {
+  $('clipToggle').dataset.on = clipSec > 0 ? '1' : '0';
+  $('clipSecInput').value = String(clipSec > 0 ? clipSec : 30);
+  $('clipPw').value = '';
+  syncClipUI();
+  $('clipboardForm').classList.add('show');
+}
+
+$('btnClip').addEventListener('click', openClipModal);
+$('clipToggle').addEventListener('click', () => {
+  const on = $('clipToggle').dataset.on === '1';
+  $('clipToggle').dataset.on = on ? '0' : '1';
+  syncClipUI();
+});
+$('btnClipCancel').addEventListener('click', () => {
+  $('clipboardForm').classList.remove('show');
+});
+$('btnClipSave').addEventListener('click', async () => {
+  const on = $('clipToggle').dataset.on === '1';
+  const sec = on ? parseInt($('clipSecInput').value, 10) : 0;
+  if (on && (isNaN(sec) || sec < 5)) {
+    $('clipHintMsg').textContent = t('clip_sec_invalid');
+    return;
+  }
+  const body = { password: '', sec };
+  if (on) {
+    body.password = $('clipPw').value;
+    if (!body.password) {
+      $('clipHintMsg').textContent = t('clip_need_pw');
+      return;
+    }
+  }
+  const r = await fetch('/api/vault/clipboard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    $('clipHintMsg').textContent = d.detail || t('clip_fail');
+    return;
+  }
+  clipSec = d.sec;
+  $('clipboardForm').classList.remove('show');
+  await appAlert(clipSec > 0 ? t('clip_saved_on').replace('{n}', clipSec) : t('clip_saved_off'));
+});
+
+// 首次复制密码时提示
+function maybeShowClipHint() {
+  if (clipSec > 0) return;
+  if (localStorage.getItem('clip_hint_shown')) return;
+  localStorage.setItem('clip_hint_shown', '1');
+  $('clipHintModal').classList.add('show');
+}
+$('btnClipHintGo').addEventListener('click', () => {
+  $('clipHintModal').classList.remove('show');
+  openClipModal();
+});
+$('btnClipHintOk').addEventListener('click', () => {
+  $('clipHintModal').classList.remove('show');
+});
+
+// ===== 备份与恢复（普通 Prompt） =====
+function downloadFile(name, text, type = 'text/markdown') {
+  const blob = new Blob([text], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+function stamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+$('backupBtn').addEventListener('click', () => $('backupForm').classList.add('show'));
+$('btnBackupClose').addEventListener('click', () => $('backupForm').classList.remove('show'));
+
+$('btnExportPrompts').addEventListener('click', async () => {
+  try {
+    const d = await (await fetch('/api/export/prompts')).json();
+    downloadFile(`FishyBox-Prompts-${stamp()}.md`, d.text);
+    await appAlert(t('export_ok').replace('{n}', d.count));
+  } catch (e) {
+    await appAlert(t('export_fail'));
+  }
+});
+
+$('btnImportPrompts').addEventListener('click', () => $('importFileInput').click());
+
+$('btnBackupDb').addEventListener('click', async () => {
+  const r = await fetch('/api/backup', { method: 'POST' });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { await appAlert(d.detail || t('backup_fail')); return; }
+  await appAlert(t('backup_ok').replace('{name}', d.name));
+});
+
+$('importFileInput').addEventListener('change', async () => {
+  const file = $('importFileInput').files[0];
+  if (!file) return;
+  const text = await file.text();
+  $('importFileInput').value = '';
+  const r = await fetch('/api/import/prompts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { await appAlert(d.detail || t('import_fail')); return; }
+  await appAlert(t('import_ok').replace('{n}', d.count));
+  loadPrompts($('searchInput').value.trim());
+});
+
+// ===== 隐私库备份 =====
+$('btnVaultBackup').addEventListener('click', () => {
+  if (!vaultToken) { appAlert(t('unlock_first')); return; }
+  $('vaultBackupForm').classList.add('show');
+});
+$('btnVaultBackupClose').addEventListener('click', () => $('vaultBackupForm').classList.remove('show'));
+
+$('btnExportVault').addEventListener('click', async () => {
+  // 先关掉导出面板，再弹安全警告（每次导出都必须确认）
+  $('vaultBackupForm').classList.remove('show');
+  const ok = await showDialog({
+    title: t('export_warn_title'),
+    message: t('export_warn_body'),
+    buttons: [
+      { text: t('cancel'), value: false },
+      { text: t('i_understand'), value: true, primary: true },
+    ],
+  });
+  if (!ok) return;
+  try {
+    const r = await fetch('/api/export/vault', { headers: { 'X-Vault-Token': vaultToken } });
+    const d = await r.json();
+    if (!r.ok) { await appAlert(d.detail || t('export_fail')); return; }
+    downloadFile(`FishyBox-Vault-${stamp()}.fishybox`, d.data, 'text/plain');
+    await appAlert(t('export_ok').replace('{n}', d.count));
+  } catch (e) {
+    await appAlert(t('export_fail'));
+  }
+});
+
+$('btnImportVault').addEventListener('click', () => $('vaultFileInput').click());
+$('vaultFileInput').addEventListener('change', async () => {
+  const file = $('vaultFileInput').files[0];
+  if (!file) return;
+  const data = await file.text();
+  $('vaultFileInput').value = '';
+  const pw = await appPrompt(t('vault_import_pw'));
+  if (!pw) return;
+  const r = await fetch('/api/import/vault', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pw, data }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) { await appAlert(d.detail || t('import_fail')); return; }
+  await appAlert(t('import_ok').replace('{n}', d.count));
+  loadVaultItems();
+});
+
+async function loadClipSetting() {
+  try {
+    const d = await (await fetch('/api/vault/clipboard')).json();
+    clipSec = d.sec || 0;
+  } catch (e) {
+    clipSec = 0;
+  }
+}
+
+// 所有小眼睛统一绑定（切换掩码类，而不是 input.type）
+document.querySelectorAll('.eye-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const input = $(btn.dataset.target);
+    if (!input) return;
+    input.classList.toggle('pw-mask');
+  });
+});
+
+bindPasswordHint('setPwd', 'setPwdHint');
+bindPasswordHint('resetPwd', 'resetHint');
+
+// 聚焦时清空分类框（浏览器会无视 autocomplete=off 强行填充历史值，聚焦清空兜底）
+$('categoryInput').addEventListener('focus', function () { this.value = ''; });
+
+// ===== 隐私库自动锁定（5 分钟无操作） =====
+const AUTO_LOCK_MS = 5 * 60 * 1000;
+let vaultLastActivity = Date.now();
+['mousemove', 'keydown', 'click', 'scroll'].forEach((ev) => {
+  document.addEventListener(ev, () => { vaultLastActivity = Date.now(); }, { passive: true });
+});
+setInterval(async () => {
+  if (vaultToken && Date.now() - vaultLastActivity > AUTO_LOCK_MS) {
+    await vaultLock();
+    await appAlert(t('auto_locked'));
+  }
+}, 30 * 1000);
+
+// ===== 心跳：每 15 秒告诉后端"页面还开着"；页面关闭后进程自动退出 =====
+fetch('/api/heartbeat', { method: 'POST' }).catch(() => {});
+setInterval(() => {
+  fetch('/api/heartbeat', { method: 'POST' }).catch(() => {});
+}, 15 * 1000);
+
+// 初始加载
+applyI18n();
+// 清空输入框，防止浏览器自动填充残留（修标签框默认成历史值的问题）
+$('titleInput').value = '';
+$('categoryInput').value = '';
+$('contentInput').value = '';
+loadTags();
+loadClipSetting();
+loadPrompts();
+</script>
+</body>
+</html>
